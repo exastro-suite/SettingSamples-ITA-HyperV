@@ -1,0 +1,30 @@
+---
+- name: 作業対象入れを用意
+  set_fact:
+    _target_list: []
+
+
+- name: 処理状況が「追加」のレコードを抽出
+  set_fact:
+    _target_list: "{{ _target_list + [[ item.1, item.2, item.3, item.4, item.5, item.6 ]] }}"
+  when: item.0 == "追加" and item.1
+  with_together:
+    - "{{ VAR_VMFlag }}"
+    - "{{ VAR_VMName }}"
+    - "{{ VAR_DHCPflag }}"
+    - "{{ VAR_IPaddr }}"
+    - "{{ VAR_SUBNet }}"
+    - "{{ VAR_DefaultGW }}"
+    - "{{ VAR_DNSServer }}"
+
+
+- block:
+    - name: 作業対象の存在確認
+      fail:
+        msg: "作業対象となるレコードが存在しません。"
+      when: _target_list | length <= 0
+
+  rescue:
+    - name: メッセージ出力
+      debug:
+        msg: "以降の作業は対象なしで実行されます。"

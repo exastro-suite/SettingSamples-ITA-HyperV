@@ -1,0 +1,61 @@
+---
+- name: Hyper-Vから仮想マシンのIPアドレス取得
+  win_shell: Get-VMNetWorkAdapter -VMName "{{ item.0 }}" | select IPAddresses
+  register: _vm_ipaddr_result
+  failed_when: not _vm_ipaddr_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+- block:
+    - name: IPアドレスが取れてきているか確認
+      fail:
+        msg: "{{ item.item[0] }}のIPアドレスが取得できませんでした。"
+      when: item.stdout_lines[3] | length <= 11
+      loop: "{{ _vm_ipaddr_result.results }}"
+
+
+    - name: ホスト名:[IP,ログインユーザー名,ログインパスワード]に成型
+      set_fact:
+        _device_data_dict: >-
+          {%- set tmpdict = {} -%}
+          {%- for vmlist in _target_list -%}
+          {%-   set tmplist = [] -%}
+          {%-   set _ = tmplist.append( _vm_ipaddr_result.results[loop.index0].stdout_lines[3] | regex_replace('{', '' )| regex_replace(',.*', '')) -%}
+          {%-   set _ = tmplist.append( vmlist[1] ) -%}
+          {%-   set _ = tmplist.append( vmlist[2] ) -%}
+          {%-   set _ = tmpdict.update({ vmlist[0] : tmplist })  -%}
+          {%- endfor -%}
+          {{ tmpdict }}
+
+
+  rescue:
+    - name: 起動直後に取得した可能性を考え2分待機
+      pause:
+        minutes: 2
+
+
+    - name: 再度Hyper-Vから仮想マシンのIPアドレス取得
+      win_shell: Get-VMNetWorkAdapter -VMName "{{ item.0 }}" | select IPAddresses
+      register: _vm_ipaddr_result
+      failed_when: not _vm_ipaddr_result.stderr == ""
+      loop: "{{ _target_list }}"
+
+
+    - name: IPアドレスが取れてきているか確認
+      fail:
+        msg: "{{ item.item[0] }}のIPアドレスが取得できませんでした。"
+      when: item.stdout_lines[3] | length <= 11
+      loop: "{{ _vm_ipaddr_result.results }}"
+
+
+    - name: ホスト名:[IP,ログインユーザー名,ログインパスワード]に成型
+      set_fact:
+        _device_data_dict: >-
+          {%- set tmpdict = {} -%}
+          {%- for vmlist in _target_list -%}
+          {%-   set tmplist = [] -%}
+          {%-   set _ = tmplist.append( _vm_ipaddr_result.results[loop.index0].stdout_lines[3] | regex_replace('{', '' )| regex_replace(',.*', '')) -%}
+          {%-   set _ = tmplist.append( vmlist[1] ) -%}
+          {%-   set _ = tmplist.append( vmlist[2] ) -%}
+          {%-   set _ = tmpdict.update({ vmlist[0] : tmplist })  -%}
+          {%- endfor -%}
+          {{ tmpdict }}

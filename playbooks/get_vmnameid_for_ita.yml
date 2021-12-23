@@ -1,0 +1,46 @@
+---
+- name: 変数定義
+  set_fact:
+    _target_host: "127.0.0.1"
+    _vmname_list: []
+    _vmname_record_from_exastro_body: []
+
+- name: 仮想マシン名の配列用意
+  set_fact:
+    _vmname_list: "{{ _vmname_list + [ item.0 ]}}"
+  loop: "{{ _target_list }}"
+  delegate_to: localhost
+
+- name: 仮想マシン名からNoを取得
+  uri:
+    url: "https://{{ _target_host }}/default/menu/07_rest_api_ver1.php?no=0000260002"
+    headers:
+      Host: "{{ _target_host }}:443"
+      Content-type: "application/json"
+      Authorization: "{{ GBL_AUTHORIZATION }}"
+      X-Command: FILTER_DATAONLY
+    method: POST
+    status_code: 200
+    validate_certs: no
+    body_format: json
+    body:
+      "1":
+        "NORMAL": "0"
+      "3":
+        "LIST": [
+                  "{{ item }}"
+                ]
+  register: _vmname_record
+  when: item
+  loop: "{{ _vmname_list | unique }}"
+  environment:
+    no_proxy: "{{ _target_host }}"
+  delegate_to: localhost
+
+
+- name: 取得したデータからレコード情報を抽出
+  set_fact:
+    _vmname_record_from_exastro_body: "{{ _vmname_record_from_exastro_body + item.json.resultdata.CONTENTS.BODY }}"
+  delegate_to: localhost
+  loop: "{{ _vmname_record.results }}"
+  when: item.item

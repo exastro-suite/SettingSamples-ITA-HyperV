@@ -1,0 +1,6 @@
+---
+- name: 仮想ハードディスク保存先フォルダ削除
+  win_file:
+    path: "{{ GBL_VMPATH }}\\{{ item.0 }}"
+    state: absent
+  loop: "{{ _target_list }}"

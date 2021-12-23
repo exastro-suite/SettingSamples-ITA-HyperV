@@ -1,0 +1,127 @@
+---
+- name: 変数定義
+  set_fact:
+    _target_host: "127.0.0.1"
+    _ita_record_from_exastro_body: []
+    _ita_item_list: []
+
+
+- name: 機器一覧を取得
+  uri:
+    url: "https://{{ _target_host }}/default/menu/07_rest_api_ver1.php?no=2100000303"
+    headers:
+      Host: "{{ _target_host }}:443"
+      Content-type: "application/json"
+      Authorization: "{{ GBL_AUTHORIZATION }}"
+      X-Command: FILTER_DATAONLY
+    method: POST
+    status_code: 200
+    validate_certs: no
+    body_format: json
+    body:
+      "1":
+        "NORMAL": "0"
+      "4":
+        "LIST": [
+                  "{{ item.0 }}"
+                ]
+  register: _ita_record
+  loop: "{{ _target_list }}"
+  environment:
+    no_proxy: "{{ _target_host }}"
+  delegate_to: localhost
+
+
+- name: 取得したデータからレコード情報を抽出
+  set_fact:
+    _ita_item_list: "{{ _ita_item_list + [ item.item.0 ] }}"
+    _ita_record_from_exastro_body: "{{ _ita_record_from_exastro_body + [ item.json.resultdata.CONTENTS.BODY ] }}"
+  delegate_to: localhost
+  loop: "{{ _ita_record.results }}"
+  when: item.item
+
+
+- name: 追加用Body成型
+  set_fact:
+    _add_rest_body: >-
+      {%- set tmpdic_outer = {} -%}
+      {%- set ns = namespace(cnt=0) -%}
+      {%- for valloop in _ita_record_from_exastro_body -%}
+      {%-   set tmpdic_inner = {} -%}
+      {%-   if valloop | length <= 0  -%}
+      {%-     set _ = tmpdic_inner.update( { "0": "登録" }) -%}
+      {%-     set _ = tmpdic_inner.update( { "3": "SV" }) -%}
+      {%-     set _ = tmpdic_inner.update( { "4": _ita_item_list[loop.index0] }) -%}
+      {%-     set _ = tmpdic_inner.update( { "5": _device_data_dict[_ita_item_list[loop.index0]][0] }) -%}
+      {%-     set _ = tmpdic_inner.update( { "8": _device_data_dict[_ita_item_list[loop.index0]][1] }) -%}
+      {%-     set _ = tmpdic_inner.update( { "9": "●" }) -%}
+      {%-     set _ = tmpdic_inner.update( { "10": _device_data_dict[_ita_item_list[loop.index0]][2] }) -%}
+      {%-     set _ = tmpdic_inner.update( { "22": "machine"}) -%}
+      {%-     set _ = tmpdic_outer.update({ ns.cnt: tmpdic_inner }) -%}
+      {%-     set ns.cnt = ns.cnt + 1 -%}
+      {%-   endif -%}
+      {%- endfor -%}
+      {{ tmpdic_outer }}
+  delegate_to: localhost
+
+
+- name: 更新用Body成型
+  set_fact:
+    _change_rest_body: >-
+      {%- set tmpdic_outer = {} -%}
+      {%- set ns = namespace(cnt=0) -%}
+      {%- for valloop in _ita_record_from_exastro_body -%}
+      {%-   set tmpdic_inner = {} -%}
+      {%-   if valloop | length > 0  -%}
+      {%-     for vallist in valloop -%}
+      {%-       for val in vallist -%}
+      {%-         if loop.index0 == 0 -%}
+      {%-           set _ = tmpdic_inner.update( { loop.index0: "更新" }) -%}
+      {%-         elif loop.index0 == 5 -%}
+      {%-           set _ = tmpdic_inner.update( { loop.index0: _device_data_dict[vallist[4]][0] }) -%}
+      {%-         elif loop.index0 == 8 -%}
+      {%-           set _ = tmpdic_inner.update( { loop.index0: _device_data_dict[vallist[4]][1] }) -%}
+      {%-         elif loop.index0 == 9 -%}
+      {%-           set _ = tmpdic_inner.update( { loop.index0: "●" }) -%}
+      {%-         elif loop.index0 == 10 -%}
+      {%-           set _ = tmpdic_inner.update( { loop.index0: _device_data_dict[vallist[4]][2] }) -%}
+      {%-         else -%}
+      {%-           if val != None and val != "" -%}
+      {%-             set _ = tmpdic_inner.update( { loop.index0: val }) -%}
+      {%-           endif -%}
+      {%-         endif -%}
+      {%-       endfor -%}
+      {%-     endfor -%}
+      {%-     set _ = tmpdic_outer.update({ ns.cnt: tmpdic_inner }) -%}
+      {%-   endif -%}
+      {%-   set ns.cnt = ns.cnt + 1 -%}
+      {%- endfor -%}
+      {{ tmpdic_outer }}
+  delegate_to: localhost
+
+
+- name: rest_body
+  set_fact:
+    _rest_body: [ "{{ _add_rest_body }}", "{{ _change_rest_body }}" ]
+
+
+- name: 対象レコードを更新
+  uri:
+    url: "https://{{ _target_host }}/default/menu/07_rest_api_ver1.php?no=2100000303"
+    headers:
+      Host: "{{ _target_host }}:443"
+      Content-type: "application/json"
+      Authorization: "{{ GBL_AUTHORIZATION }}"
+      X-Command: EDIT
+    method: POST
+    status_code: 200
+    validate_certs: no
+    body_format: json
+    body:
+        "{{ item }}"
+  register: _ita_record
+  loop: "{{ _rest_body }}"
+  when: item
+  environment:
+    no_proxy: "{{ _target_host }}"
+  delegate_to: localhost

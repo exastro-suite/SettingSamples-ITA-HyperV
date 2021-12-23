@@ -1,0 +1,14 @@
+---
+- name: VM作成
+  win_shell: |
+    New-VM -Name "{{ item.0 }}" `
+    -MemoryStartupBytes {{ item.2 }}MB `
+    -BootDevice "VHD" `
+    -VHDPath "{{ GBL_VMPATH }}\{{ item.0 }}\Virtual Hard Disks\{{ item.0 }}_system.vhdx" `
+    -Path "{{ GBL_VMPATH }}" `
+    -SwitchName "{{ item.4 }}" `
+    -Generation "{{ item.5 }}"
+  register: create_vm_result
+  failed_when: not create_vm_result.stderr == ""
+  loop: "{{ _target_list }}"
+

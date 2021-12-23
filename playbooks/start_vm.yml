@@ -1,0 +1,11 @@
+---
+- name: 仮想マシン起動
+  win_shell: "Start-VM {{ item.0 }}"
+  register: Start_vm_result
+  failed_when: not Start_vm_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+
+- name: 処理状況の設定
+  set_fact:
+    _status: "起動済"

@@ -1,0 +1,19 @@
+---
+- name: 作業対象入れを用意
+  set_fact:
+    _target_list: []
+
+
+- name: 処理状況が「削除」のレコードを抽出
+  set_fact:
+    _target_list: "{{ _target_list + [[ item.1 ]] }}"
+  when: item.0 == "削除" and item.1
+  with_together:
+    - "{{ VAR_VMFlag }}"
+    - "{{ VAR_VMName }}"
+
+
+- name: 作業対象が存在しない場合終了
+  fail:
+    msg: "作業対象となるレコードが存在しません。"
+  when: _target_list | length <= 0

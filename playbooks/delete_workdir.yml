@@ -1,0 +1,6 @@
+---
+- name: Powershellスクリプトの一時配置先削除
+  win_file:
+    path: "{{ GBL_POWERSHELLPATH }}"
+    state: absent
+  when: _target_list | length > 0
