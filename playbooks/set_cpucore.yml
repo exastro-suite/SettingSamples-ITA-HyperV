@@ -1,0 +1,6 @@
+---
+- name: CPUコア数設定
+  win_shell: "Set-VMProcessor -VMName {{ item.0 }} -Count {{ item.1 }}"
+  register: Cpucore_result
+  failed_when: not Cpucore_result.stderr == ""
+  loop: "{{ _target_list }}"

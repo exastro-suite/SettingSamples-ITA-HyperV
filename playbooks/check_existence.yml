@@ -1,0 +1,13 @@
+---
+- name: 作業予定のVM名の存在確認
+  win_shell:  Get-VM {{ item.0 }} | select-object Name
+  register: get_vm_result
+  failed_when: false
+  loop: "{{ _target_list }}"
+
+
+- name: 存在していない場合異常終了
+  fail:
+    msg: "{{ item.item.0 }}が存在してません。"
+  when: item.changed and item.stderr
+  loop: "{{ get_vm_result.results }}"

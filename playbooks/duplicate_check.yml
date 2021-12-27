@@ -1,0 +1,13 @@
+---
+- name: 追加予定の仮想マシン名の存在確認
+  win_shell:  Get-VM {{ item.0 }} | select-object Name
+  register: get_vm_result
+  failed_when: false
+  when: item.0
+  loop: "{{ _target_list }}"
+
+- name: 重複箇所表示
+  fail:
+    msg: "{{ item.item.0 }}が存在してます。"
+  when: item.changed and item.stdout
+  loop: "{{ get_vm_result.results }}"

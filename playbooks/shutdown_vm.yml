@@ -1,0 +1,18 @@
+---
+# 起動直後だとシャットダウンがうまく行かない可能性があるので、待機させる
+- name: 一定時間待機(分)
+  pause:
+    minutes: 2
+  when: _target_list | length > 0
+
+
+- name: 仮想マシン停止（シャットダウン）
+  win_shell: "Stop-VM -Force {{ item.0 }}"
+  register: Stop_vm_result
+  failed_when: not Stop_vm_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+
+- name: 処理状況設定
+  set_fact:
+    _status: "停止済"

@@ -1,0 +1,14 @@
+---
+- name: 仮想ハードディスク作成
+  win_shell: New-VHD -Path '{{ GBL_VMPATH }}\{{ item.0 }}\Virtual Hard Disks\{{ item.0 }}_{{ item.1 }}.vhdx' -SizeBytes {{ item.2 }}GB
+  register: NewVHD_result
+  failed_when: not NewVHD_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+
+- name: 仮想ハードディスク追加
+  win_shell: Add-VMHardDiskDrive -VMName {{ item.0 }} -Path '{{ GBL_VMPATH }}\{{ item.0 }}\Virtual Hard Disks\{{ item.0 }}_{{ item.1 }}.vhdx'
+  register: AddVHD_result
+  failed_when: not AddVHD_result.stderr == ""
+  when: item.0
+  loop: "{{ _target_list }}"

@@ -1,0 +1,14 @@
+---
+- name: ハードディスクの保存先作成
+  win_file:
+    path: '{{ GBL_VMPATH }}\\{{ item.0 }}\\Virtual Hard Disks'
+    state: directory
+  loop: "{{ _target_list }}"
+
+
+- name: VHDファイルコピー
+  win_copy:
+    src: "{{ item.3 }}"
+    dest: '{{ GBL_VMPATH }}\\{{ item.0 }}\\Virtual Hard Disks\\{{ item.0 }}_system.vhdx'
+    remote_src: yes
+  loop: "{{ _target_list }}"

@@ -1,0 +1,6 @@
+---
+- name: 動的メモリー設定
+  win_shell: "Set-VMMemory -VMName {{ item.0 }} -DynamicMemoryEnabled $True"
+  register: DynamicMem_result
+  failed_when: not DynamicMem_result.stderr == ""
+  loop: "{{ _target_list }}"

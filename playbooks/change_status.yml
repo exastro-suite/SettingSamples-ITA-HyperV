@@ -1,0 +1,82 @@
+---
+- name: 変数定義
+  set_fact:
+    _target_host: "127.0.0.1"
+    _ita_record_from_exastro_body: []
+
+
+- name: 対象メニューから該当の仮想マシン名のレコード情報を取得
+  uri:
+    url: "https://{{ _target_host }}/default/menu/07_rest_api_ver1.php?no={{ _menu_id }}"
+    headers:
+      Host: "{{ _target_host }}:443"
+      Content-type: "application/json"
+      Authorization: "{{ GBL_AUTHORIZATION }}"
+      X-Command: FILTER_DATAONLY
+    method: POST
+    status_code: 200
+    validate_certs: no
+    body_format: json
+    body:
+      "1":
+        "NORMAL": "0"
+      "12":
+        "LIST": [
+                  "{{ item[2] }}"
+                ]
+  register: _ita_record
+  loop: "{{ _vmname_record_from_exastro_body }}"
+  when: item
+  environment:
+    no_proxy: "{{ _target_host }}"
+  delegate_to: localhost
+
+
+- name: 取得したデータからレコード情報を抽出
+  set_fact:
+    _ita_record_from_exastro_body: "{{ _ita_record_from_exastro_body + item.json.resultdata.CONTENTS.BODY }}"
+  delegate_to: localhost
+  loop: "{{ _ita_record.results }}"
+  when: item.item
+
+
+- name: Body成型
+  set_fact:
+    _rest_body: >-
+      {%- set tmpdic_outer = {} -%}
+      {%- for valloop in _ita_record_from_exastro_body -%}
+      {%-   set tmpdic_inner = {} -%}
+      {%-   for val in valloop -%}
+      {%-     if loop.index0 == 0 -%}
+      {%-       set _ =  tmpdic_inner.update( { loop.index0: "更新" }) -%}
+      {%-     elif loop.index0 == 11 -%}
+      {%-       set _ =  tmpdic_inner.update( { loop.index0: _status }) -%}
+      {%-     else -%}
+      {%-       set _ =  tmpdic_inner.update( { loop.index0: val }) -%}
+      {%-     endif -%}
+      {%-   endfor -%}
+      {%-   set _ = tmpdic_outer.update({ loop.index0: tmpdic_inner }) -%}
+      {%- endfor -%}
+      {{ tmpdic_outer }}
+  delegate_to: localhost
+
+
+- name: 対象レコードを更新
+  uri:
+    url: "https://{{ _target_host }}/default/menu/07_rest_api_ver1.php?no={{ _menu_id }}"
+    headers:
+      Host: "{{ _target_host }}:443"
+      Content-type: "application/json"
+      Authorization: "{{ GBL_AUTHORIZATION }}"
+      X-Command: EDIT
+    method: POST
+    status_code: 200
+    validate_certs: no
+    body_format: json
+    body:
+        "{{ _rest_body }}"
+  register: _ita_record
+  when: _rest_body
+  environment:
+    no_proxy: "{{ _target_host }}"
+  delegate_to: localhost

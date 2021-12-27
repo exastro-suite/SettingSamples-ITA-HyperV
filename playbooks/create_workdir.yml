@@ -1,0 +1,6 @@
+---
+- name: Powershellスクリプト_一時配置先作成
+  win_file:
+    path: "{{ GBL_POWERSHELLPATH }}"
+    state: directory
+  when: _target_list | length > 0

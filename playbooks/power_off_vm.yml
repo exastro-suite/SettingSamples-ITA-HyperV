@@ -1,0 +1,11 @@
+---
+- name: 仮想マシン停止（電源OFF）
+  win_shell: "Stop-VM -TurnOff {{ item.0 }}"
+  register: _poweroff_vm_result
+  failed_when: not _poweroff_vm_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+
+- name: 処理状況設定
+  set_fact:
+    _status: "停止済"

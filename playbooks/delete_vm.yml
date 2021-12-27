@@ -1,0 +1,11 @@
+---
+- name: 仮想マシン削除
+  win_shell: "Remove-VM -Name {{ item.0 }} -Force"
+  register: delete_vm_result
+  failed_when: not delete_vm_result.stderr == ""
+  loop: "{{ _target_list }}"
+
+
+- name: 処理状況設定
+  set_fact:
+    _status: "削除済"
