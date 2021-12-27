@@ -13,4 +13,4 @@
 
 [リリースページ](https://github.com/exastro-suite/SettingSamples-ITA-HyperV/releases/tag/v1.0.0)より導入するExastro IT Automationシステムのバージョンに合わせパッケージファイル（.kym）をダウンロードし、導入ITAシステムへのインポート作業と初期設定を行います。
 
-本モデルの導入手順の詳細については、[導入手順書](https://github.com/exastro-suite/SettingSamples-ITA-HyperV/tree/v1.0.0/docs/setting-samples-ita-hyperv-install_ja.pdf) を参照してください。
+本モデルの概要については、[概要資料](https://github.com/exastro-suite/SettingSamples-ITA-HyperV/blob/v1.0.0/docs/setting-samples-hyperv-overview_ja.pdf) を、導入手順の詳細については、[導入手順書](https://github.com/exastro-suite/SettingSamples-ITA-HyperV/blob/v1.0.0/docs/setting-samples-hyperv-install_ja.pdf) を参照してください。
