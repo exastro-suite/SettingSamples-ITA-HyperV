@@ -20,11 +20,7 @@
 - name: IPアドレス設定(Static)
   win_shell: |
     . {{ GBL_POWERSHELLPATH }}\\{{ CPF_Set_IPaddr | basename }} ; Set-VMNetworkConfiguration `
-    $(VMNetworkAdapter {{ item.0 }}) `
-    {{ item.2 }} `
-    {{ item.3 }} `
-    {{ item.4 }} `
-    {{ item.5 }}
+    $(VMNetworkAdapter {{ item.0 }}) {{ item.2 }} {{ item.3 }} {{ item.4 }} {{ item.5 }}
   register: set_ip_result
   failed_when: not set_ip_result.stderr == ""
   when: not item.1
